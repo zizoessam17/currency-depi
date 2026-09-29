@@ -1,0 +1,10 @@
+#navbar {
+  background-color: #14315d;
+ 
+}
+.viewport {
+  background-image: url(/background.jpg);
+  background-size: cover;
+  background-position: center;
+  height: 89vh;
+    }
