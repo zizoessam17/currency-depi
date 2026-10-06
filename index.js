@@ -2,7 +2,7 @@ const convertFrom = document.querySelector("#convertFrom");
 const convertTo = document.querySelector("#convertTo");
 const convertButton = document.querySelector(".convert button");
 const amountInput = document.querySelector("#input");
-const resultEl = document.querySelector(".result h1");
+const resultEl = document.querySelector(".result");
 const swapButton = document.querySelector("#swapButton");
 const COUNTRY_NAMES = {
   AED: "United Arab Emirates Dirham",
@@ -157,44 +157,36 @@ const COUNTRY_NAMES = {
   ZMW: "Zambian Kwacha",
 };
 
-
-resultEl.textContent = "";
 let rates = [];
 
+function Options() {
+  Object.entries(COUNTRY_NAMES).forEach(([code, name]) => {
+    const label = `${code} - ${name}`;
+    convertFrom.append(new Option(label, code));
+    convertTo.append(new Option(label, code));
+  });
+}
+document.addEventListener("DOMContentLoaded", () => {
+  Options();
+});
+
 async function loadData() {
+  // resultEl.innerHTML = `<h1 class="fs-3">Loading currency data...</h1>`;
+
   try {
     const response = await fetch(
       "https://v6.exchangerate-api.com/v6/2f2773ac86724d425f5250aa/latest/USD",
     );
     const data = await response.json();
     rates = data.conversion_rates;
-
-
-    Object.keys(rates).forEach((code) => {
-      const countryName = COUNTRY_NAMES[code];
-      const label = countryName ? `${code} - ${countryName}` : code;
-
-      const optionFrom = document.createElement("option");
-      optionFrom.value = code;
-      optionFrom.textContent = label;
-      convertFrom.appendChild(optionFrom);
-
-      const optionTo = document.createElement("option");
-      optionTo.value = code;
-      optionTo.textContent = label;
-      convertTo.appendChild(optionTo);
-    });
   } catch (error) {
-    console.error(error);
+    resultEl.innerHTML = `<h1 class="error fs-3">Error loading currency data.</h1>`;
+    console.log(error);
   }
 }
-loadData();
 
 function calc(amount) {
-  const converted =
-    (amount / rates[convertFrom.value]) * rates[convertTo.value];
-
-  return `${amount} ${convertFrom.value} = ${converted.toFixed(2)} ${convertTo.value}`;
+  return (amount / rates[convertFrom.value]) * rates[convertTo.value];
 }
 
 function swapCurrencies() {
@@ -205,15 +197,19 @@ function swapCurrencies() {
 
 swapButton.addEventListener("click", () => {
   swapCurrencies();
-  convertButton.click(); 
 });
 
-convertButton.addEventListener("click", () => {
+convertButton.addEventListener("click", async () => {
+  resultEl.innerHTML = `<h1 class="fs-3">Loading...</h1>`;
+  if (Object.keys(rates).length === 0) {
+    await loadData();
+  }
   const amount = parseFloat(amountInput.value) || 1;
-
-  resultEl.textContent =
-    convertFrom.value !== "Choose the currency" &&
-    convertTo.value !== "Choose the currency"
-      ? calc(amount)
-      : "Please select both currencies.";
+  if (Object.keys(rates).length > 0) {
+    resultEl.innerHTML =
+      convertFrom.value !== "Choose the currency" &&
+      convertTo.value !== "Choose the currency"
+        ? `<h1 class="fs-3">${amount} ${convertFrom.value} = ${calc(amount).toFixed(2)} ${convertTo.value}</h1>`
+        : `<h1 class="error fs-3">Please select both currencies.</h1>`;
+  }
 });
